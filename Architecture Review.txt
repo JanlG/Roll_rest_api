@@ -1,0 +1,109 @@
+Schema 1	
+n_dice_count_n_sides			integer [Partition Key]
+n_occurences					integer
+Result Set						Dictionary
+Date							date time
+
+Assumptions:
+	Performance
+		We expect the first lambda to be used heavily.
+		While the second lambda will be called in intervals.
+		We do not need the result of the second lambda immediately.
+		
+	Recoverability
+		We want all the historical data.
+	
+	Cost
+		We want to minimize cost.
+
+Solution:
+	Store record for each run of the first lambda.
+	
+	Pros:
+		Fastest to Prototype = Fastest to Finish.
+		No locking or contention as unique run time will have a separate row.
+		Data can be used for other functions or feature if need be.
+		(Aggregate per day, Aggregate per hour, Highest distribution in a month)
+	Cons:
+		Aggregating records will become exponentially slower.
+		More records to parse = Slower to finish.
+		
+
+
+
+Schema 2
+[Aggregate Table]	
+n_dice_count_n_sides			integer [Partition Key]
+n_occurences					integer
+Result Set						Dictionary
+Date							date time
+
+Assumptions:
+	Performance
+		We are more concerned about the performance of the second lambda.
+		
+	Recoverability
+		We do not need historical data.
+		Only aggregate data is needed.
+	
+	Cost
+		We want to minimize cost.
+
+Solution:
+	Store only aggregated records.
+	
+	Pros:
+		O(n) no matter how many opperations.
+		
+	Cons:
+		Locking or contention might happen on first lambda.
+		No Historical Data.
+		Data cannot be reused for other features.
+
+		
+		
+
+Schema 3
+[Aggregate Table]	
+n_dice_count_n_sides			integer [Partition Key]
+n_occurences					integer
+Result Set						Dictionary
+Date							date time
+
+[Historical Table]
+n_dice_count_n_sides			integer [Partition Key]
+n_occurences					integer
+Result Set						Dictionary
+Date							date time
+
+Assumptions:
+	Performance
+		We are concerned with performance of both operations
+		
+	Recoverability
+		We want all to store all the results.
+	
+	Cost
+		We are willing to spend more for better performance and recoverability.
+
+Solution:
+	Keep two tables one for aggregation and another for historical data.
+	
+	Pros:
+		O(n) no matter how many opperations.
+		Historical Data is stored.
+		Locking or contention can be prevented by using SNS and SQS queues.
+		Scale proof.
+	Cons:
+		Longer time to develop and test.
+		More Costly.
+		
+		
+		
+		
+		
+		
+        Condition = {
+          NotIpAddress = {
+            "aws:SourceIp" = ["10.0.0.0/24", "10.10.0.0/24"]
+          }
